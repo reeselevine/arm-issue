@@ -1,0 +1,3 @@
+[submodule "lib/easyvk"]
+	path = lib/easyvk
+	url = https://github.com/reeselevine/easyvk
