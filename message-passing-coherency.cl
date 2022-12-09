@@ -20,16 +20,24 @@ __kernel void litmus_test (
   __global atomic_uint* test_locations,
   __global TestResults* test_results,
   __global uint* shuffled_locations) {
+    // This thread executes the stores on a location corresponding to its place in the overall gride
     uint id_0 = get_group_id(0) * get_local_size(0) + get_local_id(0);
+    // This thread executes the reads on some other location, retrieved using a buffer with shuffled ids
     uint id_1 = shuffled_locations[id_0];
     uint x_0 = id_0;
     uint y_0 = get_new_id(id_0);
     uint x_1 = id_1;
     uint y_1 = get_new_id(id_1);
+
+    // Thread 1 instructions
     atomic_store_explicit(&test_locations[x_0], 1, memory_order_relaxed);
     atomic_store_explicit(&test_locations[y_0], 2, memory_order_relaxed);
+
+    // Thread 2 instructions
     uint r0 = atomic_load_explicit(&test_locations[y_1], memory_order_relaxed);
     uint r1 = atomic_load_explicit(&test_locations[x_1], memory_order_relaxed);
+
+    // Store results
     if (r0 == 0 && r1 == 0) {
       atomic_fetch_add(&test_results->seq0, 1);
     } else if (r0 == 2 && r1 == 2) {
