@@ -30,4 +30,6 @@ cmake ..
 cmake --build .
 ```
 
+To run, use the command `./TestRunner parameters.txt`. The parameters included should be enough to reproduce the issue with high probability.
+
 Make sure that when cloning, the `--recurse-submodules` option is included, to pick up the easyvk submodule.
