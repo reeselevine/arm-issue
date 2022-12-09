@@ -169,26 +169,25 @@ map<string, int> read_config(string &config_file)
 
 void print_help()
 {
-  cout << "Usage: ./TestRunner shaderFile shaderResultFile paramFile\n";
+  cout << "Usage: ./TestRunner paramFile\n";
 }
 
 int main(int argc, char *argv[])
 {
-  if (argc < 4)
+  if (argc < 2)
   {
     print_help();
   }
   else
   {
-    srand(time(NULL));
-    string shaderFile(argv[1]);
-    string resultShaderFile(argv[2]);
-    string configFile(argv[3]);
+    string configFile(argv[1]);
     map<string, int> params = read_config(configFile);
      for (const auto& [key, value] : params) {
         std::cout << key << " = " << value << "; ";
     }
     std::cout << "\n";
+    string shaderFile("message-passing-coherency.spv");
+    string resultShaderFile("message-passing-coherency-results.spv");
     run(shaderFile, resultShaderFile, params);
   }
   return 0;
