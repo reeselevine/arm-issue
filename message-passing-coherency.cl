@@ -11,7 +11,7 @@ __kernel void litmus_test (
     uint x_0 = id_0;
     uint y_0 = get_new_id(id_0);
     uint x_1 = id_1;
-    uint y_1 = get_new_id(id_0);
+    uint y_1 = get_new_id(id_1);
     atomic_store_explicit(&test_locations[x_0], 1, memory_order_relaxed);
     atomic_store_explicit(&test_locations[y_0], 2, memory_order_relaxed);
     uint r0 = atomic_load_explicit(&test_locations[y_1], memory_order_relaxed);

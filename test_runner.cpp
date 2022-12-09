@@ -1,6 +1,6 @@
 #include <map>
-#include <set>
 #include <iostream>
+#include <random>
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -15,6 +15,19 @@ const int readOutputs = 2;
 
 /** MP-CO has nine possible behaviors. */
 const int numBehaviors = 9;
+
+/** Results */
+typedef struct TestResults {
+  int seq0;
+  int seq1;
+  int interleaved0;
+  int interleaved1;
+  int interleaved2;
+  int interleaved3;
+  int weak0;
+  int weak1;
+  int weak2;
+} TestResults;
 
 /** Returns the GPU to use for this test run. Users can specify the specific GPU to use
  *  with the 'gpuDeviceId' parameter. If gpuDeviceId is not included in the parameters or the specified
@@ -46,9 +59,9 @@ void clearMemory(Buffer &gpuMem, int size) {
 
 /** Assigns shuffled workgroup ids, using the shufflePct to determine whether the ids should be shuffled this iteration. */
 void setShuffledLocations(Buffer &shuffledLocations, int testingThreads) {
-  array<uint, testingThreads> locs;
+  vector<uint> locs;
   for (int i = 0; i < testingThreads; i++) {
-    locs[i] = i;
+    locs.push_back(i);
   }
   unsigned seed = chrono::system_clock::now().time_since_epoch().count();
   shuffle(locs.begin(), locs.end(), default_random_engine(seed));
@@ -66,6 +79,16 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
   int workgroups = params["workgroups"];
   int workgroupSize = params["workgroupSize"];
   int testingThreads = workgroupSize * workgroups;
+  TestResults finalResults;
+  finalResults.seq0 = 0;
+  finalResults.seq1 = 0;
+  finalResults.interleaved0 = 0;
+  finalResults.interleaved1 = 0;
+  finalResults.interleaved2 = 0;
+  finalResults.interleaved3 = 0;
+  finalResults.weak0 = 0;
+  finalResults.weak1 = 0;
+  finalResults.weak2 = 0;
 
   // set up buffers
   auto testLocations = Buffer(device, testingThreads);
@@ -76,8 +99,6 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
   vector<Buffer> resultBuffers = {readResults, testResults};
 
   // run iterations
-  chrono::time_point<std::chrono::system_clock> start, end;
-  start = chrono::system_clock::now();
   for (int i = 0; i < params["iterations"]; i++) {
     auto program = Program(device, shader_file.c_str(), buffers);
     auto resultProgram = Program(device, result_shader_file.c_str(), resultBuffers);
@@ -92,19 +113,30 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
     program.run();
     resultProgram.prepare();
     resultProgram.run();
-    cout << "Iteration " << i << "\n";
-    cout << "r0 == 0 && r1 == 0: " << testResults.load(0) << "\n";
-    cout << "r0 == 2 && r1 == 2: " << testResults.load(1) << "\n";
-    cout << "r0 == 1 && r1 == 1: " << testResults.load(2) << "\n";
-    cout << "r0 == 0 && r1 == 1: " << testResults.load(3) << "\n";
-    cout << "r0 == 0 && r1 == 2: " << testResults.load(4) << "\n";
-    cout << "r0 == 1 && r1 == 2: " << testResults.load(5) << "\n";
-    cout << "r0 == 1 && r1 == 0: " << testResults.load(6) << "\n";
-    cout << "r0 == 2 && r1 == 0: " << testResults.load(7) << "\n";
-    cout << "r0 == 2 && r1 == 0: " << testResults.load(8) << "\n";
-    cout << "\n";
+    finalResults.seq0 += testResults.load(0);
+    finalResults.seq1 += testResults.load(1);
+    finalResults.interleaved0 += testResults.load(2);
+    finalResults.interleaved1 += testResults.load(3);
+    finalResults.interleaved2 += testResults.load(4);
+    finalResults.interleaved3 += testResults.load(5);
+    finalResults.weak0 += testResults.load(6);
+    finalResults.weak1 += testResults.load(7);
+    finalResults.weak2 += testResults.load(8);
     program.teardown();
   }
+
+  cout << "Results:\n";
+  cout << "r0 == 0 && r1 == 0: " << finalResults.seq0 << "\n";
+  cout << "r0 == 2 && r1 == 2: " << finalResults.seq1 << "\n";
+  cout << "r0 == 1 && r1 == 1: " << finalResults.interleaved0 << "\n";
+  cout << "r0 == 0 && r1 == 1: " << finalResults.interleaved1 << "\n";
+  cout << "r0 == 0 && r1 == 2: " << finalResults.interleaved2 << "\n";
+  cout << "r0 == 1 && r1 == 2: " << finalResults.interleaved3 << "\n";
+  cout << "r0 == 1 && r1 == 0: " << finalResults.weak0 << "\n";
+  cout << "r0 == 2 && r1 == 0: " << finalResults.weak1 << "\n";
+  cout << "r0 == 2 && r1 == 0: " << finalResults.weak2 << "\n";
+  cout << "\n";
+
   for (Buffer buffer : buffers) {
     buffer.teardown();
   }

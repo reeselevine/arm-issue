@@ -1,0 +1,3 @@
+iterations=100
+workgroups=16
+workgroupSize=256
