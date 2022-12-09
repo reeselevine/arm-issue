@@ -14,6 +14,8 @@ uint r0 = atomic_load(x, memory_order_relaxed);
 uint r1 = atomic_load(x, memory_order_relaxed);
 ```
 
+where `x` is a memory location initialized to 0.
+
 In this test, it should be impossible for `r1` to load an earlier write than `r0`; for example, having `r0` load 2 but `r1` load 1 or 0. However, on the G78 Arm GPU running in a Pixel 6, we do observe this reordering some of the time.
 
 ## How this repository works
