@@ -29,3 +29,5 @@ cd build
 cmake ..
 cmake --build .
 ```
+
+Make sure that when cloning, the `--recurse-submodules` option is included, to pick up the easyvk submodule.
