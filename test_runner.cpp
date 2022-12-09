@@ -71,7 +71,7 @@ void setShuffledLocations(Buffer &shuffledLocations, int testingThreads) {
 }
 
 /** A test consists of N iterations of a shader and its corresponding result shader. */
-void run(string &shader_file, string &result_shader_file, map<string, int> params)
+void run(string &shader_file, map<string, int> params)
 {
   // initialize settings
   auto instance = Instance(false);
@@ -92,27 +92,20 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
 
   // set up buffers
   auto testLocations = Buffer(device, testingThreads);
-  auto readResults = Buffer(device, readOutputs * testingThreads);
   auto shuffledLocations = Buffer(device, testingThreads);
   auto testResults = Buffer(device, numBehaviors);
-  vector<Buffer> buffers = {testLocations, readResults, shuffledLocations};
-  vector<Buffer> resultBuffers = {readResults, testResults};
+  vector<Buffer> buffers = {testLocations, testResults, shuffledLocations};
 
   // run iterations
   for (int i = 0; i < params["iterations"]; i++) {
     auto program = Program(device, shader_file.c_str(), buffers);
-    auto resultProgram = Program(device, result_shader_file.c_str(), resultBuffers);
     clearMemory(testLocations, testingThreads);
     clearMemory(testResults, numBehaviors);
     setShuffledLocations(shuffledLocations, testingThreads);
     program.setWorkgroups(workgroups);
-    resultProgram.setWorkgroups(workgroups);
     program.setWorkgroupSize(workgroupSize);
-    resultProgram.setWorkgroupSize(workgroupSize);
     program.prepare();
     program.run();
-    resultProgram.prepare();
-    resultProgram.run();
     finalResults.seq0 += testResults.load(0);
     finalResults.seq1 += testResults.load(1);
     finalResults.interleaved0 += testResults.load(2);
@@ -140,7 +133,6 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
   for (Buffer buffer : buffers) {
     buffer.teardown();
   }
-  testResults.teardown();
   device.teardown();
   instance.teardown();
 }
@@ -187,8 +179,7 @@ int main(int argc, char *argv[])
     }
     std::cout << "\n";
     string shaderFile("message-passing-coherency.spv");
-    string resultShaderFile("message-passing-coherency-results.spv");
-    run(shaderFile, resultShaderFile, params);
+    run(shaderFile, params);
   }
   return 0;
 }

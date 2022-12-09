@@ -1,10 +1,22 @@
+typedef struct TestResults {
+  atomic_uint seq0;
+  atomic_uint seq1;
+  atomic_uint interleaved0;
+  atomic_uint interleaved1;
+  atomic_uint interleaved2;
+  atomic_uint interleaved3;
+  atomic_uint weak0;
+  atomic_uint weak1;
+  atomic_uint weak2;
+} TestResults;
+
 static uint get_new_id(uint id) {
     return id;
 }
 
 __kernel void litmus_test (
   __global atomic_uint* test_locations,
-  __global atomic_uint* read_results,
+  __global TestResults* test_results,
   __global uint* shuffled_locations) {
     uint id_0 = get_group_id(0) * get_local_size(0) + get_local_id(0);
     uint id_1 = shuffled_locations[id_0];
@@ -16,6 +28,23 @@ __kernel void litmus_test (
     atomic_store_explicit(&test_locations[y_0], 2, memory_order_relaxed);
     uint r0 = atomic_load_explicit(&test_locations[y_1], memory_order_relaxed);
     uint r1 = atomic_load_explicit(&test_locations[x_1], memory_order_relaxed);
-    atomic_store(&read_results[id_1 * 2], r0);
-    atomic_store(&read_results[id_1 * 2 + 1], r1);
+    if (r0 == 0 && r1 == 0) {
+      atomic_fetch_add(&test_results->seq0, 1);
+    } else if (r0 == 2 && r1 == 2) {
+      atomic_fetch_add(&test_results->seq1, 1);
+    } else if (r0 == 1 && r1 == 1) {
+      atomic_fetch_add(&test_results->interleaved0, 1);
+    } else if (r0 == 0 && r1 == 1) {
+      atomic_fetch_add(&test_results->interleaved1, 1);
+    } else if (r0 == 0 && r1 == 2) {
+      atomic_fetch_add(&test_results->interleaved2, 1);
+    } else if (r0 == 1 && r1 == 2) {
+      atomic_fetch_add(&test_results->interleaved3, 1);
+    } else if (r0 == 1 && r1 == 0) {
+      atomic_fetch_add(&test_results->weak0, 1);
+    } else if (r0 == 2 && r1 == 0) {
+      atomic_fetch_add(&test_results->weak1, 1);
+    } else if (r0 == 2 && r1 == 1) {
+      atomic_fetch_add(&test_results->weak2, 1);
+    }
 }
