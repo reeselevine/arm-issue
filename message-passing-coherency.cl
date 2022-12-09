@@ -10,6 +10,8 @@ typedef struct TestResults {
   atomic_uint weak2;
 } TestResults;
 
+// Calling this function seems sufficient to avoid x_0/y_0 and x_1/y_1 from being
+// coalesced, and allows the load reordering to occur.
 static uint get_new_id(uint id) {
     return id;
 }
