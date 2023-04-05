@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 # set the project name
 project(TestRunner)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Find Vulkan
 find_package(Vulkan REQUIRED)
 

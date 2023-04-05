@@ -74,7 +74,7 @@ void setShuffledLocations(Buffer &shuffledLocations, int testingThreads) {
 void run(string &shader_file, map<string, int> params)
 {
   // initialize settings
-  auto instance = Instance(false);
+  auto instance = Instance(true);
   auto device = getDevice(instance, params);
   int workgroups = params["workgroups"];
   int workgroupSize = params["workgroupSize"];
@@ -115,7 +115,6 @@ void run(string &shader_file, map<string, int> params)
     finalResults.weak0 += testResults.load(6);
     finalResults.weak1 += testResults.load(7);
     finalResults.weak2 += testResults.load(8);
-    program.teardown();
   }
 
   cout << "Results:\n";
@@ -129,12 +128,6 @@ void run(string &shader_file, map<string, int> params)
   cout << "r0 == 2 && r1 == 0: " << finalResults.weak1 << "\n";
   cout << "r0 == 2 && r1 == 0: " << finalResults.weak2 << "\n";
   cout << "\n";
-
-  for (Buffer buffer : buffers) {
-    buffer.teardown();
-  }
-  device.teardown();
-  instance.teardown();
 }
 
 /** Reads a specified config file and stores the parameters in a map. Parameters should be of the form "key=value", one per line. */
